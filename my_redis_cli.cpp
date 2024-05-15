@@ -146,18 +146,6 @@ std::string create_RESP_command(const std::string& command, const std::string& p
 
 std::string commands_with_any_attribute(std::string msg, int sock, char *buffer){
     std::vector<std::string>words_msg = break_text_to_words(msg);
-    if (words_msg[0] == "HSET"){
-        std::string command = create_RESP_command_for_hget(words_msg);
-        send(sock, command.c_str(), command.size(), 0);
-        read(sock, buffer, BUFFER_SIZE);
-        return buffer;
-    }
-    if (words_msg[0] == "HGET"){
-        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
-        send(sock, command.c_str(), command.size(), 0);
-        read(sock, buffer, BUFFER_SIZE);
-        return buffer;
-    }
     if (words_msg[0] == "SET"){
         std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
         send(sock, command.c_str(), command.size(), 0);
@@ -278,7 +266,60 @@ std::string commands_with_any_attribute(std::string msg, int sock, char *buffer)
         read(sock, buffer, BUFFER_SIZE);
         return buffer;
     }
-
+    if (words_msg[0] == "HEXISTS"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HSET"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HGET"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HDEL"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HGETALL"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HKEYS"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HLEN"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HMSET"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HVALS"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
     return "Error command!\n";
 }
 
@@ -341,7 +382,6 @@ int main() {
         getline(cin, message);
         if (quit(message)) {
             command = "*1\\r\\n$4\\r\\nQUIT\\r\\n";
-            cout << "Byebye...\n";
             send(sock, command.c_str(), command.size(), 0);
             break;
         }
