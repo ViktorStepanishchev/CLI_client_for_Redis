@@ -7,6 +7,7 @@
 #include <string>
 #include <string.h>
 #include <ctype.h>
+#include <typeinfo>
 using namespace std;
 
 #define SERVER_IP "127.0.0.1"
@@ -25,6 +26,25 @@ std::vector<std::string> break_text_to_words(const std::string& msg) {
 
 std::string create_RESP_command(const std::string& command, const std::string& parametr, const std::string& value, const std::string& sec_value, int att) {
     if (att == 4){
+        if (command == "LREM"){
+            int v;
+            v = std::stoi(value);
+            std::stringstream resp;
+
+            resp << "*" << att << "\r\n";
+            resp << "$" << command.size() << "\r\n";
+            resp << command << "\r\n";
+            resp << "$" << parametr.size() << "\r\n";
+            resp << parametr << "\r\n";
+            resp << "$" << value.size() << "\r\n";
+            resp << v << "\r\n";
+            resp << "$" << sec_value.size() << "\r\n";
+            resp << sec_value << "\r\n";
+            return resp.str();
+        }
+        int v, s_v;
+        v = std::stoi(value);
+        s_v = std::stoi(sec_value);
         std::stringstream resp;
         resp << "*" << att << "\r\n";
         resp << "$" << command.size() << "\r\n";
@@ -32,12 +52,26 @@ std::string create_RESP_command(const std::string& command, const std::string& p
         resp << "$" << parametr.size() << "\r\n";
         resp << parametr << "\r\n";
         resp << "$" << value.size() << "\r\n";
-        resp << value << "\r\n";
+        resp << v << "\r\n";
         resp << "$" << sec_value.size() << "\r\n";
-        resp << sec_value << "\r\n";
+        resp << s_v << "\r\n";
         return resp.str();
     }
     if (att == 3){
+        if (command == "LINDEX"){
+            int v;
+            v = std::stoi(value);
+            std::stringstream resp;
+
+            resp << "*" << att << "\r\n";
+            resp << "$" << command.size() << "\r\n";
+            resp << command << "\r\n";
+            resp << "$" << parametr.size() << "\r\n";
+            resp << parametr << "\r\n";
+            resp << "$" << value.size() << "\r\n";
+            resp << v << "\r\n";
+            return resp.str();
+        }
         std::stringstream resp;
         resp << "*" << att << "\r\n";
         resp << "$" << command.size() << "\r\n";
@@ -134,6 +168,61 @@ std::string commands_with_any_attribute(std::string msg, int sock, char *buffer)
         read(sock, buffer, BUFFER_SIZE);
         return buffer;
     }
+    if (words_msg[0] == "LRANGE"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "RRANGE"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "LPOP"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "RPOP"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "LLEN"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "LREM"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "LLEN"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "LINDEX"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "LSET"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+
     return "Error command!\n";
 }
 
