@@ -24,6 +24,50 @@ std::vector<std::string> break_text_to_words(const std::string& msg) {
     return words;
 }
 
+bool isNumber(const std::string& s)
+{
+    std::stringstream ss(s);
+    float num;
+    ss >> num;
+
+    if(ss.fail() || !ss.eof()) {
+        return false;
+    }
+    return true;
+}
+
+std::string create_RESP_command_for_hget(std::vector<std::string>&words_msg){
+    std::stringstream resp;
+    resp << "*" << words_msg.size() << "\r\n";
+    resp << "$" << words_msg[0].size() << "\r\n";
+    resp << words_msg[0] << "\r\n";
+    resp << "$" << words_msg[1].size() << "\r\n";
+    resp << words_msg[1] << "\r\n";
+    resp.str();
+    for (int i = 2; i < words_msg.size(); i++){
+        if (i % 2 == 0){
+            resp << "$" << words_msg[i].size() << "\r\n";
+            resp << words_msg[i] << "\r\n";
+            resp.str();
+        }
+        else{
+            int s;
+            if (isNumber(words_msg[i])){
+                s = std::stoi(words_msg[i]);
+                resp << "$" << words_msg[i].size() << "\r\n";
+                resp << s << "\r\n";
+                resp.str();
+            }
+            else{
+                resp << "$" << words_msg[i].size() << "\r\n";
+                resp << words_msg[i] << "\r\n";
+                resp.str();
+            }
+        }
+    }
+    return resp.str();
+}
+
 std::string create_RESP_command(const std::string& command, const std::string& parametr, const std::string& value, const std::string& sec_value, int att) {
     if (att == 4){
         if (command == "LREM"){
@@ -102,6 +146,18 @@ std::string create_RESP_command(const std::string& command, const std::string& p
 
 std::string commands_with_any_attribute(std::string msg, int sock, char *buffer){
     std::vector<std::string>words_msg = break_text_to_words(msg);
+    if (words_msg[0] == "HSET"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
+    if (words_msg[0] == "HGET"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        send(sock, command.c_str(), command.size(), 0);
+        read(sock, buffer, BUFFER_SIZE);
+        return buffer;
+    }
     if (words_msg[0] == "SET"){
         std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
         send(sock, command.c_str(), command.size(), 0);
