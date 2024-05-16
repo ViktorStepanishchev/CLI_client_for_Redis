@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <vector>
@@ -8,11 +9,13 @@
 #include <string.h>
 #include <ctype.h>
 #include <typeinfo>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 using namespace std;
 
-#define SERVER_IP "127.0.0.1"
-#define DEFAULT_PORT 6379
 #define BUFFER_SIZE 1024
+#define REDIS_SERVER "127.0.0.1"
+#define REDIS_PORT 6379
 
 std::vector<std::string> break_text_to_words(const std::string& msg) {
     std::vector<std::string> words;
@@ -352,46 +355,54 @@ bool quit(std::string msg){
 }
 
 int main() {
-    int sock, client;
-    struct sockaddr_in serv_addr;
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        cout << "Ошибка создания сокета" << std::endl;
-        return -1;
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+
+    SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
+    SSL *ssl = SSL_new(ctx);
+
+    int server = socket(AF_INET, SOCK_STREAM, 0);
+    sockaddr_in sa_serv;
+    memset(&sa_serv, '\0', sizeof(sa_serv));
+
+    sa_serv.sin_family = AF_INET;
+    sa_serv.sin_port = htons(REDIS_PORT);
+    sa_serv.sin_addr.s_addr = inet_addr(REDIS_SERVER);
+
+    connect(server, (struct sockaddr*) &sa_serv, sizeof(sa_serv));
+
+    SSL_set_fd(ssl, server);
+
+    if (SSL_connect(ssl) == -1) {
+        ERR_print_errors_fp(stderr);
+    } else {
+        printf("Connected with %s encryption\n", SSL_get_cipher(ssl));
+        // Здесь вы можете написать код для отправки и получения данных от сервера Redis.
     }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(DEFAULT_PORT);
+    SSL_shutdown(ssl);
+    SSL_free(ssl);
+    close(server);
+    SSL_CTX_free(ctx);
+    EVP_cleanup();
 
-    if (inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr) <= 0) {
-        cout << "Неверный адрес или адрес не поддерживается" << std::endl;
-        return -1;
-    }
-
-    if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        cout << "Ошибка подключения" << std::endl;
-        return -1;
-    }
-
-
-    std::string message;
-    char buffer[BUFFER_SIZE] = {0};
-    std::string command;
-
-    while (true) {
-        cout << SERVER_IP << ":" << DEFAULT_PORT << ">";
-        getline(cin, message);
-        if (quit(message)) {
-            command = "*1\\r\\n$4\\r\\nQUIT\\r\\n";
-            send(sock, command.c_str(), command.size(), 0);
-            break;
-        }
-        if (message.find(' ') > 0 && message.find(' ') != 18446744073709551615) {
-            cout << commands_with_any_attribute(message, sock, buffer);
-        }
-        if (message.find(' ') == 18446744073709551615) {
-            cout << command_no_space(message, sock, buffer);
-        }
-    }
-    close(client);
     return 0;
 }
+
+
+//while (true) {
+//        cout << SERVER_IP << ":" << DEFAULT_PORT << ">";
+//        getline(cin, message);
+//        if (quit(message)) {
+//            command = "*1\\r\\n$4\\r\\nQUIT\\r\\n";
+//            send(sock, command.c_str(), command.size(), 0);
+//            break;
+//        }
+//        if (message.find(' ') > 0 && message.find(' ') != 18446744073709551615) {
+//            cout << commands_with_any_attribute(message, sock, buffer);
+//        }
+//        if (message.find(' ') == 18446744073709551615) {
+//            cout << command_no_space(message, sock, buffer);
+//        }
+//    }
