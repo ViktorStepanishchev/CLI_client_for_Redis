@@ -221,16 +221,18 @@ std::string commands_with_any_attribute(std::string msg, int sock, char *buffer)
         return buffer;
     }
     if (words_msg[0] == "LPUSH"){
-        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        std::string command = create_RESP_command_for_hget(words_msg);
         send(sock, command.c_str(), command.size(), 0);
         read(sock, buffer, BUFFER_SIZE);
-        return buffer;
+        std::vector res = break_text_to_words(buffer);
+        return res[0];
     }
     if (words_msg[0] == "RPUSH"){
-        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        std::string command = create_RESP_command_for_hget(words_msg);
         send(sock, command.c_str(), command.size(), 0);
         read(sock, buffer, BUFFER_SIZE);
-        return buffer;
+        std::vector res = break_text_to_words(buffer);
+        return res[0];
     }
     if (words_msg[0] == "LRANGE"){
         std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
