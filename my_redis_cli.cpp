@@ -5,9 +5,13 @@
 #include <vector>
 #include <sstream>
 #include <string>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include <string.h>
 #include <ctype.h>
 #include <typeinfo>
+#include <cstring>
+
 using namespace std;
 
 #define SERVER_IP "127.0.0.1"
@@ -369,46 +373,157 @@ bool quit(std::string msg){
     }
 }
 
-int main() {
+
+// Функция для инициализации SSL
+void initSSL() {
+    SSL_load_error_strings();
+    OpenSSL_add_ssl_algorithms();
+}
+
+// Функция для очистки SSL
+void cleanupSSL() {
+    EVP_cleanup();
+}
+
+// Функция для создания SSL-соединения
+SSL* createSSLConnection(const std::string& host, int port, const std::string& certFile) {
     int sock;
-    struct sockaddr_in serv_addr;
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        cout << "Ошибка создания сокета" << std::endl;
-        return -1;
+    struct sockaddr_in server;
+    SSL* ssl;
+    SSL_CTX* ctx;
+
+    // Создаем TCP-соединение
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1) {
+        perror("Could not create socket");
+        exit(EXIT_FAILURE);
     }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(DEFAULT_PORT);
+    server.sin_addr.s_addr = inet_addr(host.c_str());
+    server.sin_family = AF_INET;
+    server.sin_port = htons(port);
 
-    if (inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr) <= 0) {
-        cout << "Неверный адрес или адрес не поддерживается" << std::endl;
-        return -1;
+    if (connect(sock, (struct sockaddr*)&server, sizeof(server)) < 0) {
+        perror("Connection failed");
+        exit(EXIT_FAILURE);
     }
 
-    if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-        cout << "Ошибка подключения" << std::endl;
-        return -1;
+    // Инициализируем SSL
+    ctx = SSL_CTX_new(TLS_client_method());
+    if (ctx == nullptr) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
     }
 
+    // Устанавливаем сертификат CA
+    if (SSL_CTX_load_verify_locations(ctx, certFile.c_str(), nullptr) != 1) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
 
-    std::string message;
-    char buffer[BUFFER_SIZE] = {0};
-    std::string command;
+    ssl = SSL_new(ctx);
+    SSL_set_fd(ssl, sock);
 
-    while (true) {
-        cout << SERVER_IP << ":" << DEFAULT_PORT << ">";
-        getline(cin, message);
-        if (quit(message)) {
-            break;
+    if (SSL_connect(ssl) != 1) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    return ssl;
+}
+
+int main(int argc, char* argv[]) {
+    std::string host = SERVER_IP;
+    int port = DEFAULT_PORT;
+    std::string certFile = "";
+    bool useTLS = false;
+
+    // Парсим аргументы командной строки
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--tls") {
+            useTLS = true;
+        } else if (arg == "--cacert") {
+            if (i + 1 < argc) {
+                certFile = argv[++i];
+            } else {
+                std::cerr << "--cacert requires a certificate file path" << std::endl;
+                return 1;
+            }
         }
-        if (message.find(' ') > 0 && message.find(' ') != 18446744073709551615) {
-            cout << commands_with_any_attribute(message, sock, buffer) << "\n";
+        else {
+            std::cerr << "Unknown option: " << arg << std::endl;
+            return 1;
         }
-        if (message.find(' ') == 18446744073709551615) {
-            cout << command_no_space(message, sock, buffer) << "\n";
+    }
+
+    initSSL();
+    SSL* ssl = nullptr;
+    int sock;
+
+    if (useTLS) {
+        if (certFile.empty()) {
+            std::cerr << "--cacert is required when using --tls" << std::endl;
+            cleanupSSL();
+            return 1;
         }
+        ssl = createSSLConnection(host, port, certFile);
+        sock = SSL_get_fd(ssl);
+        //
+    }
+    else {
+        struct sockaddr_in serv_addr;
+        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+            cout << "Ошибка создания сокета" << std::endl;
+            return -1;
+        }
+
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_port = htons(DEFAULT_PORT);
+
+        if (inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr) <= 0) {
+            cout << "Неверный адрес или адрес не поддерживается" << std::endl;
+            return -1;
+        }
+
+        if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+            cout << "Ошибка подключения" << std::endl;
+            return -1;
+        }
+
+        std::string message;
+        char buffer[BUFFER_SIZE] = {0};
+        std::string command;
+
+        while (true) {
+            cout << SERVER_IP << ":" << DEFAULT_PORT << ">";
+            getline(cin, message);
+            if (quit(message)) {
+                break;
+            }
+            if (message.find(' ') > 0 && message.find(' ') != 18446744073709551615) {
+                cout << commands_with_any_attribute(message, sock, buffer) << "\n";
+            }
+            if (message.find(' ') == 18446744073709551615) {
+                cout << command_no_space(message, sock, buffer) << "\n";
+            }
+        }
+        close(sock);
+        return 0;
+    }
+
+    // Используйте sock для отправки и получения данных
+    // Если использован TLS, используйте SSL_write и SSL_read вместо send и recv
+
+    // Закрываем соединение
+    if (ssl) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
     }
     close(sock);
+
+    cleanupSSL();
     return 0;
 }
 
