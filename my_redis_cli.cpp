@@ -714,6 +714,7 @@ void initSSL() {
 
 // Функция для очистки SSL
 void cleanupSSL() {
+    cout << "Clear SSL...\n";
     EVP_cleanup();
 }
 
