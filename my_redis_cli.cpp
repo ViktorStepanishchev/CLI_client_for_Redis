@@ -18,6 +18,7 @@ using namespace std;
 #define DEFAULT_PORT 6379
 #define BUFFER_SIZE 4096
 
+
 std::vector<std::string> break_text_to_words(const std::string& msg) {
     std::vector<std::string> words;
     std::istringstream potok(msg);
@@ -150,6 +151,8 @@ std::string create_RESP_command(const std::string& command, const std::string& p
 
 std::string commands_with_any_attribute(std::string msg, int sock, char *buffer){
     std::vector<std::string>words_msg = break_text_to_words(msg);
+    cout << "Create RESP command...\n";
+    cout << "Send RESP command to server...\n";
     if (msg == "KEYS *"){
         std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
         send(sock, command.c_str(), command.size(), 0);
@@ -346,6 +349,8 @@ std::string commands_with_any_attribute(std::string msg, int sock, char *buffer)
 }
 
 std::string command_no_space(std::string msg, int sock, char* buffer){
+    cout << "Create RESP command...\n";
+    cout << "Send RESP command to server...\n";
     if (msg == "ping"){
         std::string command = create_RESP_command(msg, "", "", "", 1);
         send(sock, command.c_str(), command.size(), 0);
@@ -370,6 +375,8 @@ std::string command_no_space(std::string msg, int sock, char* buffer){
 }
 
 std::string commands_with_any_attribute_SSL(std::string msg, int sock, char *buffer, SSL* ssl){
+    cout << "Create RESP command...\n";
+    cout << "Send RESP command to server...\n";
     std::vector<std::string>words_msg = break_text_to_words(msg);
     if (msg == "KEYS *"){
         std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
@@ -655,6 +662,8 @@ std::string commands_with_any_attribute_SSL(std::string msg, int sock, char *buf
 }
 
 std::string command_no_space_SSL(std::string msg, int sock, char* buffer, SSL* ssl){
+    cout << "Create RESP command...\n";
+    cout << "Send RESP command to server...\n";
     if (msg == "ping"){
         std::string command = create_RESP_command(msg, "", "", "", 1);
         SSL_write(ssl, command.c_str(), sizeof(buffer));
@@ -698,6 +707,7 @@ bool quit(std::string msg){
 
 // Функция для инициализации SSL
 void initSSL() {
+    cout << "Initializing SSL...\n";
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
 }
@@ -716,6 +726,7 @@ SSL* createSSLConnection(const std::string& host, int port, const std::string& c
 
     // Создаем TCP-соединение
     sock = socket(AF_INET, SOCK_STREAM, 0);
+    cout << "Create TCP-connection...\n";
     if (sock == -1) {
         perror("Could not create socket");
         exit(EXIT_FAILURE);
@@ -751,7 +762,7 @@ SSL* createSSLConnection(const std::string& host, int port, const std::string& c
         ERR_print_errors_fp(stderr);
         exit(EXIT_FAILURE);
     }
-
+    cout << "Succesful SSL connection!\n";
     return ssl;
 }
 
@@ -798,7 +809,7 @@ int main(int argc, char* argv[]) {
     else {
         struct sockaddr_in serv_addr;
         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-            cout << "Ошибка создания сокета" << std::endl;
+            cout << "ERROR CREATE SOCKET" << std::endl;
             return -1;
         }
 
@@ -806,12 +817,12 @@ int main(int argc, char* argv[]) {
         serv_addr.sin_port = htons(DEFAULT_PORT);
 
         if (inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr) <= 0) {
-            cout << "Неверный адрес или адрес не поддерживается" << std::endl;
+            cout << "WRONG ADRESS" << std::endl;
             return -1;
         }
 
         if (connect(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-            cout << "Ошибка подключения" << std::endl;
+            cout << "ERROR CONNECTION" << std::endl;
             return -1;
         }
 
@@ -822,10 +833,10 @@ int main(int argc, char* argv[]) {
                 break;
             }
             if (message.find(' ') > 0 && message.find(' ') != 18446744073709551615) {
-                cout << commands_with_any_attribute(message, sock, buffer) << "\n";
+                cout << "Server:" << commands_with_any_attribute(message, sock, buffer) << "\n";
             }
             if (message.find(' ') == 18446744073709551615) {
-                cout << command_no_space(message, sock, buffer) << "\n";
+                cout << "Server: " << command_no_space(message, sock, buffer) << "\n";
             }
         }
         close(sock);
@@ -841,23 +852,9 @@ int main(int argc, char* argv[]) {
             cout << commands_with_any_attribute_SSL(message, sock, buffer, ssl) << "\n";
         }
         if (message.find(' ') == 18446744073709551615) {
-            cout << command_no_space_SSL(message, sock, buffer, ssl) << "\n";
+            cout <<command_no_space_SSL(message, sock, buffer, ssl) << "\n";
         }
     }
-    close(sock);
-    return 0;
-
-//    std::string* cmd = "*1\r\n$4\r\nPING\r\n";
-//    send(sock, cmd, cmd->size(), 0);
-//
-//    // Получаем ответ от сервера Redis
-//    char buffer[BUFFER_SIZE];
-//    int bytesRead = recv(sock, buffer, sizeof(buffer), 0);
-//    if (bytesRead > 0) {
-//        buffer[bytesRead] = '\0';
-//        std::cout << "Server response: " << buffer << std::endl;
-//    }
-
     if (ssl) {
         SSL_shutdown(ssl);
         SSL_free(ssl);
