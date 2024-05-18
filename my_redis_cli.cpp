@@ -369,6 +369,326 @@ std::string command_no_space(std::string msg, int sock, char* buffer){
     return "Error command!\n";
 }
 
+std::string commands_with_any_attribute_SSL(std::string msg, int sock, char *buffer, SSL* ssl){
+    std::vector<std::string>words_msg = break_text_to_words(msg);
+    if (msg == "KEYS *"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "SET"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::vector res = break_text_to_words(buffer);
+            return res[0];
+        }
+    }
+    if (words_msg[0] == "GET"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::vector res = break_text_to_words(buffer);
+            if (res.size() == 1) {
+                return res[0];
+            }
+            return res[1];
+        }
+    }
+    if (words_msg[0] == "DEL"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::vector res = break_text_to_words(buffer);
+            return res[0];
+        }
+    }
+    if (words_msg[0] == "TYPE"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::vector res = break_text_to_words(buffer);
+            return res[0];
+        }
+    }
+    if (words_msg[0] == "ECHO") {
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::vector res = break_text_to_words(buffer);
+            return res[1];
+        }
+    }
+    if (words_msg[0] == "KEYS"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "UNLINK"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "EXPIRE"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "RENAME"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "LPUSH"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::vector res = break_text_to_words(buffer);
+            return res[0];
+        }
+    }
+    if (words_msg[0] == "RPUSH"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            std::vector res = break_text_to_words(buffer);
+            return res[0];
+        }
+    }
+    if (words_msg[0] == "LRANGE"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "RRANGE"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "LPOP"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "RPOP"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "LLEN"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "LREM"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "LLEN"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "LINDEX"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "LSET"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 4);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HEXISTS"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HSET"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HGET"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 3);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HDEL") {
+        std::string command = create_RESP_command_for_hget(words_msg);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HGETALL"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HKEYS"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HLEN"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HMSET"){
+        std::string command = create_RESP_command_for_hget(words_msg);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (words_msg[0] == "HVALS"){
+        std::string command = create_RESP_command(words_msg[0], words_msg[1], words_msg[2], words_msg[3], 2);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    return "Error command!\n";
+}
+
+std::string command_no_space_SSL(std::string msg, int sock, char* buffer, SSL* ssl){
+    if (msg == "ping"){
+        std::string command = create_RESP_command(msg, "", "", "", 1);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+            std::vector res = break_text_to_words(buffer);
+            return res[0];
+        }
+    }
+    if (msg == "info"){
+        std::string command = create_RESP_command(msg, "", "", "", 1);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+        }
+    }
+    if (msg == "flushall"){
+        std::string command = create_RESP_command(msg, "", "", "", 1);
+        SSL_write(ssl, command.c_str(), sizeof(buffer));
+        int bytesRead = SSL_read(ssl, buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            return buffer;
+            std::vector res = break_text_to_words(buffer);
+            return res[0];
+        }
+    }
+    return "Error command!\n";
+}
+
 bool quit(std::string msg){
     if (msg == "quit"){
         return true;
@@ -463,7 +783,9 @@ int main(int argc, char* argv[]) {
     initSSL();
     SSL* ssl = nullptr;
     int sock;
-
+    std::string message;
+    char buffer[BUFFER_SIZE] = {0};
+    std::string command;
     if (useTLS) {
         if (certFile.empty()) {
             std::cerr << "--cacert is required when using --tls" << std::endl;
@@ -472,7 +794,6 @@ int main(int argc, char* argv[]) {
         }
         ssl = createSSLConnection(host, port, certFile);
         sock = SSL_get_fd(ssl);
-        //
     }
     else {
         struct sockaddr_in serv_addr;
@@ -494,10 +815,6 @@ int main(int argc, char* argv[]) {
             return -1;
         }
 
-        std::string message;
-        char buffer[BUFFER_SIZE] = {0};
-        std::string command;
-
         while (true) {
             cout << SERVER_IP << ":" << DEFAULT_PORT << ">";
             getline(cin, message);
@@ -514,11 +831,33 @@ int main(int argc, char* argv[]) {
         close(sock);
         return 0;
     }
+    while(true) {
+        cout << ">";
+        getline(cin, message);
+        if (quit(message)) {
+            break;
+        }
+        if (message.find(' ') > 0 && message.find(' ') != 18446744073709551615) {
+            cout << commands_with_any_attribute_SSL(message, sock, buffer, ssl) << "\n";
+        }
+        if (message.find(' ') == 18446744073709551615) {
+            cout << command_no_space_SSL(message, sock, buffer, ssl) << "\n";
+        }
+    }
+    close(sock);
+    return 0;
 
-    // Используйте sock для отправки и получения данных
-    // Если использован TLS, используйте SSL_write и SSL_read вместо send и recv
+//    std::string* cmd = "*1\r\n$4\r\nPING\r\n";
+//    send(sock, cmd, cmd->size(), 0);
+//
+//    // Получаем ответ от сервера Redis
+//    char buffer[BUFFER_SIZE];
+//    int bytesRead = recv(sock, buffer, sizeof(buffer), 0);
+//    if (bytesRead > 0) {
+//        buffer[bytesRead] = '\0';
+//        std::cout << "Server response: " << buffer << std::endl;
+//    }
 
-    // Закрываем соединение
     if (ssl) {
         SSL_shutdown(ssl);
         SSL_free(ssl);
